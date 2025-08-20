@@ -26,9 +26,9 @@ function AppContent() {
   const { isInitialized, setAuthData, logout, setInitialized } = useAuthStore();
 
   // localStorage 플래그 체크 함수
-  const hasAuthFlag = (): boolean => {
+  const hasAuthFlag = useCallback((): boolean => {
     return localStorage.getItem('hasAuthToken') === 'true';
-  };
+  }, []);
 
   const checkLogin = useCallback(async () => {
     try {
