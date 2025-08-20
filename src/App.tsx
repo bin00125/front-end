@@ -25,6 +25,8 @@ function AppContent() {
   const setAuthData = useAuthStore((state) => state.setAuthData);
   const logout = useAuthStore((state) => state.logout);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isAuthChecked = useAuthStore((state) => state.isAuthChecked);
+  const setAuthChecked = useAuthStore((state) => state.setAuthChecked);
   const location = useLocation();
 
   const checkLogin = useCallback(async () => {
@@ -32,23 +34,42 @@ function AppContent() {
       const res = await axios.get('https://backend.evida.site/api/v1/users/myinfo', {
         withCredentials: true,
       });
-      if (!isLoggedIn) setAuthData(res.data);
+      setAuthData(res.data);
     } catch (err: any) {
       // 401이면 조용히 로그아웃 처리
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         logout();
       } else {
-        // 다른 에러는 콘솔에 출력
+        // 다른 에러는 콘솔에 출력하고 인증 확인만 완료 처리
         console.error(err);
+        setAuthChecked();
       }
     }
-  }, [setAuthData, logout, isLoggedIn]);
+  }, [setAuthData, logout, setAuthChecked]);
 
   useEffect(() => {
-    if (location.pathname !== '/login' && !isLoggedIn) {
+    // 한 번도 인증 확인을 하지 않았고, 로그인 페이지가 아닌 경우에만 확인
+    if (!isAuthChecked && location.pathname !== '/login') {
       checkLogin();
     }
-  }, [location.pathname, checkLogin, isLoggedIn]);
+  }, [isAuthChecked, location.pathname, checkLogin]);
+
+  // 인증 확인이 완료되지 않았으면 로딩 표시
+  if (!isAuthChecked) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          fontSize: '18px',
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <>
