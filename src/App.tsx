@@ -22,6 +22,7 @@ import axios from 'axios';
 
 function AppContent() {
   const setAuthData = useAuthStore((state) => state.setAuthData);
+  const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const location = useLocation();
@@ -34,6 +35,7 @@ function AppContent() {
       });
       if (!isLoggedIn) setAuthData(res.data);
     } catch (err: any) {
+      if (!user) return;
       // 401이면 리프레시 토큰으로 재발급 시도
 
       if (axios.isAxiosError(err) && err.response?.status === 401) {
