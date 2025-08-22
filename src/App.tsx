@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import CommunityLayout from './community/CommunityLayout';
@@ -25,6 +25,7 @@ function AppContent() {
   const logout = useAuthStore((state) => state.logout);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const checkLogin = useCallback(async () => {
     try {
@@ -33,15 +34,28 @@ function AppContent() {
       });
       if (!isLoggedIn) setAuthData(res.data);
     } catch (err: any) {
-      // 401이면 조용히 로그아웃 처리
+      // 401이면 리프레시 토큰으로 재발급 시도
+
       if (axios.isAxiosError(err) && err.response?.status === 401) {
-        logout();
+        try {
+          await axios.post('https://backend.evida.site/api/v1/users/auth/refresh', {
+            withCredentials: true,
+          });
+          //갱신 후 유저 정보 재 조회
+          const res2 = await axios.get('https://backend.evida.site/api/v1/users/myinfo', {
+            withCredentials: true,
+          });
+          setAuthData(res2.data);
+        } catch {
+          // 재발급 실패 시 로그아웃
+          logout();
+          navigate('/');
+        }
       } else {
-        // 다른 에러는 콘솔에 출력
         console.error(err);
       }
     }
-  }, [setAuthData, logout, isLoggedIn]);
+  }, [setAuthData, logout, isLoggedIn, navigate]);
 
   useEffect(() => {
     if (location.pathname !== '/login' && !isLoggedIn) {
